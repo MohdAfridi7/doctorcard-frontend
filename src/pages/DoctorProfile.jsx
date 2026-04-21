@@ -6,7 +6,7 @@ export default function DoctorProfile() {
   const [doctor, setDoctor] = useState(null);
 
   useEffect(() => {
-    fetch(`http://localhost:5000/doctor/${id}`)
+    fetch(`https://doctorecard-backend.onrender.com/doctor/${id}`)
       .then(res => res.json())
       .then(data => setDoctor(data));
   }, [id]);
