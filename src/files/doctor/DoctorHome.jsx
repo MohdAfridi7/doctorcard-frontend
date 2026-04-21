@@ -1,20 +1,48 @@
+import { useEffect, useState } from "react";
+import { getDashboardStats } from "../../api/authApi";
+
 export default function DoctorHome() {
+
+  const [stats, setStats] = useState(null);
+  const [recentEnquiries, setRecentEnquiries] = useState([]);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    loadDashboard();
+  }, []);
+
+  const loadDashboard = async () => {
+    try {
+
+      const res = await getDashboardStats();
+
+      setStats(res);
+      setRecentEnquiries(res.recentEnquiries || []);
+
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  if (!stats) {
+    return <p className="text-white p-6">Loading...</p>;
+  }
+
   return (
     <div className="p-4 sm:p-6 text-white bg-gradient-to-br from-[#0b1f1d] to-[#0d2d2a] min-h-full">
 
-      {/* Header */}
       <h1 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6">
-        Dashboard <span className="text-teal-300">Namaste, Karan Ji 🙏</span>
+        Dashboard <span className="text-teal-300">Namaste, {stats.doctorName} Ji 🙏</span>
       </h1>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
 
-        {[ 
-          { title: "PROFILE VIEWS", value: "120", sub: "Total views" },
-          { title: "TOTAL ENQUIRIES", value: "25", sub: "5 new" },
-          { title: "CONTACTED", value: "18", sub: "Replied" },
-          { title: "PENDING", value: "7", sub: "Reply soon" },
+        {[
+          { title: "PROFILE VIEWS", value: stats.profileViews, sub: "Total views" },
+          { title: "TOTAL ENQUIRIES", value: stats.totalEnquiries, sub: "All enquiries" },
+          { title: "TOTAL APPOINTMENTS", value: stats.totalAppointments, sub: "Total booked" },
+          { title: "PENDING APPOINTMENTS", value: stats.pendingAppointments, sub: "Reply soon" },
         ].map((card, i) => (
           <div
             key={i}
@@ -31,54 +59,96 @@ export default function DoctorHome() {
       {/* Bottom Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-        {/* Left */}
+        {/* Recent Enquiries */}
         <div className="lg:col-span-2 bg-[#112f2c] border border-teal-500/20 rounded-xl p-4 sm:p-5">
 
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
             <h2 className="text-base sm:text-lg font-semibold">
               Recent Enquiries
             </h2>
-            <span className="text-teal-300 text-sm cursor-pointer hover:underline">
+
+            <span
+              onClick={() => window.location.href="/doctor/enquiries"}
+              className="text-teal-300 text-sm cursor-pointer hover:underline"
+            >
               See all →
             </span>
           </div>
 
-          <p className="text-gray-400 text-center mt-6 sm:mt-10 text-sm">
-            Koi enquiry nahi aayi abhi
-          </p>
+          {recentEnquiries.length === 0 ? (
+            <p className="text-gray-400 text-center mt-6 text-sm">
+              No enquiries yet
+            </p>
+          ) : (
+
+            <div className="space-y-3">
+
+              {recentEnquiries.map((enq) => (
+
+                <div
+                  key={enq._id}
+                  className="bg-black/30 p-3 rounded-lg"
+                >
+
+                  <p className="font-medium">{enq.name}</p>
+
+                  <p className="text-xs text-gray-300">
+                    {enq.message}
+                  </p>
+
+                  <p className="text-xs text-gray-400 mt-1">
+                    {enq.email} • {enq.phone}
+                  </p>
+
+                </div>
+
+              ))}
+
+            </div>
+
+          )}
 
         </div>
 
-        {/* Right */}
+        {/* Profile Preview */}
         <div className="bg-[#112f2c] border border-teal-500/20 rounded-xl p-4 sm:p-5">
 
           <h2 className="text-base sm:text-lg font-semibold mb-4">
             Profile Preview
           </h2>
 
-          <div className="bg-gradient-to-br from-teal-600 to-teal-900 p-4 rounded-xl shadow-inner">
+          <div className="bg-gradient-to-br from-teal-600 to-teal-900 p-4 rounded-xl">
 
-            <h3 className="font-semibold text-sm sm:text-base">
-              Dr. Karan Desai
+            <h3 className="font-semibold">
+              Dr. {stats.doctorName}
             </h3>
-            <p className="text-xs sm:text-sm text-gray-200">
-              Doctor • 2 yrs exp.
-            </p>
 
-            <div className="mt-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 bg-black/30 p-2 rounded">
+            <div className="mt-3 flex justify-between items-center bg-black/30 p-2 rounded">
+
               <span className="text-xs break-all">
-                doctorcard.in/karan
+               {window.location.origin} {stats.profileUrl}
               </span>
-              <button className="text-xs bg-teal-500 px-2 py-1 rounded hover:bg-teal-400">
-                Copy
-              </button>
-            </div>
 
-            <div className="mt-3">
-              <p className="text-xs mb-1">Profile Completeness</p>
-              <div className="w-full h-2 bg-gray-700 rounded">
-                <div className="w-[20%] h-2 bg-teal-300 rounded"></div>
-              </div>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(
+                    `${window.location.origin}${stats.profileUrl}`
+                  );
+                  setCopied(true);
+
+                  setTimeout(() => {
+                    setCopied(false);
+                  }, 2000);
+                }}
+                className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all duration-300 
+                ${copied
+                    ? "bg-green-500 scale-105"
+                    : "bg-gradient-to-r from-teal-400 to-emerald-500 hover:scale-105 hover:shadow-md"
+                  }`}
+              >
+                {copied ? "✓" : "Copy"}
+              </button>
+
             </div>
 
           </div>

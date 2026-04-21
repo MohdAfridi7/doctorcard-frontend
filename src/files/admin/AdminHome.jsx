@@ -1,153 +1,134 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getAdminDashboardStats } from "../../api/authApi";
+
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts";
 
 export default function AdminHome() {
+  const [stats, setStats] = useState(null);
+  const [recentEnquiries, setRecentEnquiries] = useState([]);
 
-  // 🔥 JSON DATA DIRECT YAHI
-  const initialDoctors = [
-    {
-      name: "Dr. Rahul Sharma",
-      email: "rahul@gmail.com",
-      profileUrl: "doctorcard.in/rahul",
-      isPaid: true,
-      amount: 499,
-    },
-    {
-      name: "Dr. Priya Singh",
-      email: "priya@gmail.com",
-      profileUrl: null,
-      isPaid: false,
-      amount: 0,
-    },
-    {
-      name: "Dr. Aman Verma",
-      email: "aman@gmail.com",
-      profileUrl: "doctorcard.in/aman",
-      isPaid: true,
-      amount: 499,
-    },
-  ];
+  useEffect(() => {
+    loadDashboard();
+  }, []);
 
-  const [doctors, setDoctors] = useState(
-    initialDoctors.map(doc => ({ ...doc, isBlocked: false }))
-  );
+  const loadDashboard = async () => {
+    try {
+      const res = await getAdminDashboardStats();
 
-  // 🔥 STATS
-  const totalDoctors = doctors.length;
-  const paidDoctors = doctors.filter(d => d.isPaid).length;
-  const urlsGenerated = doctors.filter(d => d.profileUrl).length;
-  const revenue = doctors.reduce((sum, d) => sum + d.amount, 0);
-
-  // 🔥 BLOCK / UNBLOCK
-  const toggleBlock = (index) => {
-    const updated = [...doctors];
-    updated[index].isBlocked = !updated[index].isBlocked;
-    setDoctors(updated);
+      setStats(res);
+      setRecentEnquiries(res.recentEnquiries || []);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
-  return (
-    <div className="text-white">
+  if (!stats) {
+    return <p className="text-white p-6">Loading...</p>;
+  }
 
+  // Month mapping
+  const monthNames = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+  ];
+
+  // ✅ SAFE MONTHLY DATA (IMPORTANT FIX)
+  const monthlyChartData = Array.isArray(stats.doctorsMonthlyChart)
+    ? stats.doctorsMonthlyChart.map((item) => ({
+        name: monthNames[item._id - 1],
+        value: item.totalDoctors,
+      }))
+    : [];
+
+  return (
+    <div className="p-4 sm:p-6 text-white bg-gradient-to-br from-[#0b1f1d] to-[#0d2d2a] min-h-full">
+
+      {/* Header */}
       <h1 className="text-xl sm:text-2xl font-semibold mb-6">
-        Admin Dashboard
+        Dashboard{" "}
+        <span className="text-teal-300">Namaste Admin 🙏</span>
       </h1>
 
-      {/* STATS */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-        <Card title="Total Doctors" value={totalDoctors} />
-        <Card title="URLs Generated" value={urlsGenerated} />
-        <Card title="Paid Doctors" value={paidDoctors} />
-        <Card title="Revenue ₹" value={revenue} />
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+        {[
+          { title: "TOTAL DOCTORS", value: stats.totalDoctors },
+          { title: "BLOCKED DOCTORS", value: stats.blockedDoctors },
+          { title: "TOTAL ENQUIRIES", value: stats.totalEnquiries },
+          { title: "UNREAD ENQUIRIES", value: stats.unreadEnquiries },
+        ].map((card, i) => (
+          <div
+            key={i}
+            className="bg-[#112f2c] border border-teal-500/20 rounded-xl p-4 hover:border-teal-400 transition"
+          >
+            <p className="text-gray-400 text-xs">{card.title}</p>
+            <h2 className="text-xl mt-2 font-semibold">{card.value}</h2>
+          </div>
+        ))}
       </div>
 
-      {/* TABLE */}
-      <div className="bg-[#112f2c] border border-teal-500/20 rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[700px] text-xs sm:text-sm">
+      {/* MAIN SECTION */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-6">
 
-            <thead className="text-gray-400 bg-black/20">
-              <tr>
-                <th className="p-3 text-left">Doctor</th>
-                <th className="p-3 text-left">URL</th>
-                <th className="p-3 text-left">Status</th>
-                <th className="p-3 text-left">Payment</th>
-                <th className="p-3 text-left">Action</th>
-              </tr>
-            </thead>
+        {/* 📩 Recent Enquiries (60%) */}
+        <div className="lg:col-span-3 bg-[#112f2c] border border-teal-500/20 rounded-xl p-4">
 
-            <tbody>
-              {doctors.map((doc, i) => (
-                <tr key={i} className="border-t border-teal-500/10 hover:bg-white/5">
+          <h2 className="text-lg font-semibold mb-4">
+            Recent Enquiries
+          </h2>
 
-                  <td className="p-3">{doc.name}</td>
-
-                  <td className="p-3">
-                    {doc.profileUrl ? (
-                      <a
-                        href={`https://${doc.profileUrl}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={`underline text-xs sm:text-sm ${
-                          doc.isBlocked
-                            ? "text-gray-500 line-through"
-                            : "text-teal-400"
-                        }`}
-                      >
-                        {doc.profileUrl}
-                      </a>
-                    ) : (
-                      <span className="text-gray-500">Not Generated</span>
-                    )}
-                  </td>
-
-                  <td className="p-3">
-                    {doc.isBlocked ? (
-                      <span className="text-red-400 text-xs">Blocked</span>
-                    ) : (
-                      <span className="text-green-400 text-xs">Active</span>
-                    )}
-                  </td>
-
-                  <td className="p-3">
-                    {doc.isPaid ? (
-                      <span className="text-green-400 text-xs">Paid</span>
-                    ) : (
-                      <span className="text-red-400 text-xs">Unpaid</span>
-                    )}
-                  </td>
-
-                  <td className="p-3">
-                    {doc.profileUrl && (
-                      <button
-                        onClick={() => toggleBlock(i)}
-                        className={`px-3 py-1 rounded text-xs ${
-                          doc.isBlocked
-                            ? "bg-green-500 text-black"
-                            : "bg-red-500 text-white"
-                        }`}
-                      >
-                        {doc.isBlocked ? "Unblock" : "Block"}
-                      </button>
-                    )}
-                  </td>
-
-                </tr>
+          {recentEnquiries.length === 0 ? (
+            <p className="text-gray-400 text-center">
+              No enquiries yet
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {recentEnquiries.map((enq) => (
+                <div key={enq._id} className="bg-black/30 p-3 rounded-lg">
+                  <p className="font-medium">{enq.name}</p>
+                  <p className="text-xs text-gray-300">{enq.message}</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {enq.email} • {enq.phone}
+                  </p>
+                </div>
               ))}
-            </tbody>
+            </div>
+          )}
 
-          </table>
         </div>
+
+        {/* 📊 Monthly Chart (40%) */}
+        <div className="lg:col-span-2 bg-[#112f2c] border border-teal-500/20 rounded-xl p-4">
+
+          <h2 className="text-lg font-semibold mb-4">
+            Doctors Monthly Growth
+          </h2>
+
+          <div style={{ width: "100%", height: 350 }}>
+            <ResponsiveContainer>
+              <BarChart data={monthlyChartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" stroke="#fff" />
+                <YAxis stroke="#fff" />
+                <Tooltip />
+                <Bar dataKey="value" fill="#22c55e" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+        </div>
+
       </div>
-    </div>
-  );
-}
 
-
-// CARD
-function Card({ title, value }) {
-  return (
-    <div className="bg-gradient-to-br from-[#112f2c] to-[#0d2d2a] border border-teal-500/20 p-4 rounded-xl">
-      <p className="text-gray-400 text-xs sm:text-sm">{title}</p>
-      <h2 className="text-lg sm:text-xl font-bold">{value}</h2>
     </div>
   );
 }

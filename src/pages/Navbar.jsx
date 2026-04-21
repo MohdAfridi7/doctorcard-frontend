@@ -1,9 +1,13 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useContext } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { AuthContext } from "../context/AuthContext";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   return (
     <>
@@ -18,21 +22,39 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop Links */}
-        <div className="hidden md:flex gap-2">
-         
-        </div>
+        <div className="hidden md:flex gap-2"></div>
 
         {/* Buttons */}
-        <div className="hidden md:flex gap-2">
-          <Link to="/login">
-            <button className="border px-3 py-1 rounded-md">Sign In</button>
-          </Link>
-          <Link to="/signup">
-            <button className="bg-teal-500 text-white px-3 py-1 rounded-md">
-              Get Started Free
-            </button>
-          </Link>
-        </div>
+      <div className="hidden md:flex gap-2">
+
+  {user ? (
+    // ✅ LOGIN KE BAAD SIRF DASHBOARD
+    <button
+      onClick={() =>
+        navigate(user.role === "admin" ? "/admin" : "/doctor")
+      }
+      className="border px-3 py-1 rounded-md"
+    >
+      Dashboard
+    </button>
+  ) : (
+    // ❌ LOGIN NAHI → DONO BUTTON
+    <>
+      <Link to="/login">
+        <button className="border px-3 py-1 rounded-md">
+          Sign In
+        </button>
+      </Link>
+
+      <Link to="/signup">
+        <button className="bg-teal-500 text-white px-3 py-1 rounded-md">
+          Get Started Free
+        </button>
+      </Link>
+    </>
+  )}
+
+</div>
 
         {/* Mobile Menu Button */}
         <button
@@ -47,7 +69,6 @@ export default function Navbar() {
       <AnimatePresence>
         {menuOpen && (
           <>
-            {/* Overlay */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 0.4 }}
@@ -56,7 +77,6 @@ export default function Navbar() {
               className="fixed inset-0 bg-black z-40"
             />
 
-            {/* Sidebar */}
             <motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
@@ -64,7 +84,6 @@ export default function Navbar() {
               transition={{ type: "spring", stiffness: 260, damping: 25 }}
               className="fixed top-0 right-0 h-full w-72 bg-white z-50 shadow-2xl p-6 flex flex-col gap-5"
             >
-              {/* Close Button */}
               <button
                 className="text-xl self-end"
                 onClick={() => setMenuOpen(false)}
@@ -72,22 +91,45 @@ export default function Navbar() {
                 ✕
               </button>
 
-              {/* Links */}
-              
-
               <hr />
 
-              <Link onClick={() => setMenuOpen(false)} to="/login">
-                <button className="w-full border py-2 rounded-md">
-                  Sign In
-                </button>
-              </Link>
+              {user ? (
+                <>
+                  {/* ✅ DASHBOARD ONLY */}
+                  <button
+                    onClick={() => {
+                      navigate(
+                        user.role === "admin" ? "/admin" : "/doctor"
+                      );
+                      setMenuOpen(false);
+                    }}
+                    className="w-full border py-2 rounded-md"
+                  >
+                    Dashboard
+                  </button>
 
-              <Link onClick={() => setMenuOpen(false)} to="/signup">
-                <button className="w-full bg-teal-500 text-white py-2 rounded-md">
-                  Get Started Free
-                </button>
-              </Link>
+                  {/* ✅ KEEP GET STARTED */}
+                  <Link onClick={() => setMenuOpen(false)} to="/signup">
+                    <button className="w-full bg-teal-500 text-white py-2 rounded-md">
+                      Get Started Free
+                    </button>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link onClick={() => setMenuOpen(false)} to="/login">
+                    <button className="w-full border py-2 rounded-md">
+                      Sign In
+                    </button>
+                  </Link>
+
+                  <Link onClick={() => setMenuOpen(false)} to="/signup">
+                    <button className="w-full bg-teal-500 text-white py-2 rounded-md">
+                      Get Started Free
+                    </button>
+                  </Link>
+                </>
+              )}
             </motion.div>
           </>
         )}

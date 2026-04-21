@@ -2,6 +2,8 @@ import React, { useContext, useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import { toast } from "react-toastify";
+import { loginDoctor } from "../api/authApi";
 
 export default function Login() {
 
@@ -10,32 +12,43 @@ export default function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
 
-    // 🔥 TEMP LOGIN LOGIC
-    let userData;
+    try {
+      if (!email || !password) {
+        toast.error("All fields required");
+        return;
+      }
 
-    if (email === "admin@gmail.com") {
-      userData = {
-        name: "Admin",
-        role: "admin"
-      };
-    } else {
-      userData = {
-        name: "Doctor",
-        role: "doctor"
-      };
-    }
+      setLoading(true);
 
-    setUser(userData);
+      const res = await loginDoctor({ email, password });
 
-    // 🔥 redirect
-    if (userData.role === "admin") {
-      navigate("/admin");
-    } else {
-      navigate("/doctor");
+      // ✅ TOKEN SAVE
+      if (res.token) {
+        localStorage.setItem("token", res.token);
+      }
+
+      // ✅ USER SAVE
+      const userData = res.user || res.data || res;
+      setUser(userData);
+
+      toast.success(res.message || "Login successful");
+
+      // ✅ ROLE BASED REDIRECT
+      if (userData.role === "admin") {
+        navigate("/");
+      } else {
+        navigate("/");
+      }
+
+    } catch (err) {
+      toast.error(err.message || "Login failed");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -74,7 +87,6 @@ export default function Login() {
         {/* Form */}
         <form className="space-y-4" onSubmit={handleLogin}>
 
-          {/* Email */}
           <div>
             <label className="text-xs text-gray-500">EMAIL</label>
             <input
@@ -88,10 +100,10 @@ export default function Login() {
             />
           </div>
 
-          {/* Password */}
           <div>
             <label className="text-xs text-gray-500">PASSWORD</label>
             <input
+            name="password"
               type="password"
               placeholder="••••••••"
               value={password}
@@ -102,7 +114,6 @@ export default function Login() {
             />
           </div>
 
-          {/* Options */}
           <div className="flex justify-between items-center text-xs">
             <label className="flex items-center gap-2 text-gray-500">
               <input type="checkbox" /> Remember me
@@ -112,24 +123,23 @@ export default function Login() {
               to="/forgot-password"
               className="text-teal-700 font-medium hover:underline"
             >
-              Forgot?
+              Forgot password ?
             </Link>
           </div>
 
-          {/* Button */}
           <motion.button
             whileTap={{ scale: 0.96 }}
             whileHover={{ scale: 1.02 }}
             type="submit"
+            disabled={loading}
             className="w-full bg-gradient-to-r from-teal-700 to-teal-900 
             text-white py-2 rounded-lg shadow-lg 
             hover:shadow-xl transition text-sm"
           >
-            Sign In →
+            {loading ? "Signing in..." : "Sign In →"}
           </motion.button>
         </form>
 
-        {/* Footer */}
         <p className="text-center text-xs text-gray-500 mt-5">
           Don’t have an account?{" "}
           <Link

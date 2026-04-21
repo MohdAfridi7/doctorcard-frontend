@@ -4,6 +4,7 @@ export default function ContactAdmin() {
   const [form, setForm] = useState({
     name: "",
     email: "",
+    phone: "",
     message: "",
   });
 
@@ -62,6 +63,13 @@ export default function ContactAdmin() {
               placeholder="Your Email"
               className="w-full p-3 rounded-lg bg-[#112f2c] border border-teal-500/20 text-white placeholder-gray-400 outline-none focus:border-teal-400"
               onChange={(e) => setForm({ ...form, email: e.target.value })}
+            />
+            
+             {/* PHONE */}
+            <input
+              placeholder="Your Phone"
+              className="w-full p-3 rounded-lg bg-[#112f2c] border border-teal-500/20 text-white placeholder-gray-400 outline-none focus:border-teal-400"
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
             />
 
             {/* MESSAGE */}

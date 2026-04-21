@@ -1,35 +1,32 @@
 import { useState, useEffect } from "react";
-import { getAdminEnquiries, updateAdminEnquiryStatus } from "../../api/authApi";
+import { getDoctorEnquiries, updateEnquiryStatus } from "../../api/authApi";
 
-export default function Enquiries() {
+export default function DoctorEnquiries() {
 
   const [enquiries, setEnquiries] = useState([]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
 
-  const [showMessage, setShowMessage] = useState(false);
-  const [selectedMessage, setSelectedMessage] = useState("");
-
   const [currentPage, setCurrentPage] = useState(1);
   const enquiriesPerPage = 5;
 
-  // 🔥 LOAD ADMIN ENQUIRIES
+  const [showMessage, setShowMessage] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState("");
+
   useEffect(() => {
     fetchEnquiries();
   }, []);
 
   const fetchEnquiries = async () => {
     try {
-
-      const res = await getAdminEnquiries();
-      setEnquiries(res.enquiries || []);
-
+      const res = await getDoctorEnquiries();
+      setEnquiries(res || []);
     } catch (error) {
       console.error(error);
     }
   };
 
-  // 🔍 SEARCH + FILTER
+  // 🔍 FILTER + SEARCH
   const filtered = enquiries.filter((e) => {
 
     const matchSearch =
@@ -48,9 +45,9 @@ export default function Enquiries() {
   const indexOfFirst = indexOfLast - enquiriesPerPage;
 
   const currentEnquiries = filtered.slice(indexOfFirst, indexOfLast);
+
   const totalPages = Math.ceil(filtered.length / enquiriesPerPage);
 
-  // ⭐ PAGINATION (ONLY 3 BUTTONS)
   const pageNumbers = [];
 
   for (
@@ -66,14 +63,13 @@ export default function Enquiries() {
   const read = enquiries.filter(e => e.status === "read").length;
   const unread = enquiries.filter(e => e.status === "unread").length;
 
-  // 🔥 STATUS TOGGLE API
   const toggleStatus = async (id, currentStatus) => {
 
     const newStatus = currentStatus === "read" ? "unread" : "read";
 
     try {
 
-      await updateAdminEnquiryStatus(id);
+      await updateEnquiryStatus(id, { status: newStatus });
 
       setEnquiries(prev =>
         prev.map(item =>
@@ -95,13 +91,14 @@ export default function Enquiries() {
   };
 
   return (
+
     <div className="p-4 md:p-6 text-white bg-[#0b1f1d] min-h-screen">
 
       <h1 className="text-xl md:text-2xl font-semibold mb-4">
-        Admin Enquiries
+        Enquiries
       </h1>
 
-      {/* 🔍 SEARCH */}
+      {/* SEARCH */}
       <input
         type="text"
         placeholder="Search enquiry..."
@@ -113,24 +110,24 @@ export default function Enquiries() {
         className="mb-4 p-2 rounded bg-[#112f2c] w-full md:w-80"
       />
 
-      {/* 🔥 FILTER */}
+      {/* FILTER */}
       <div className="flex flex-wrap gap-3 mb-6">
 
-        <button onClick={() => { setFilter("all"); setCurrentPage(1); }} className="px-3 py-1 bg-gray-700 rounded">
+        <button onClick={() => {setFilter("all"); setCurrentPage(1)}} className="px-3 py-1 bg-gray-700 rounded">
           All ({total})
         </button>
 
-        <button onClick={() => { setFilter("read"); setCurrentPage(1); }} className="px-3 py-1 bg-teal-500 text-black rounded">
+        <button onClick={() => {setFilter("read"); setCurrentPage(1)}} className="px-3 py-1 bg-teal-500 text-black rounded">
           Read ({read})
         </button>
 
-        <button onClick={() => { setFilter("unread"); setCurrentPage(1); }} className="px-3 py-1 bg-red-500 rounded">
+        <button onClick={() => {setFilter("unread"); setCurrentPage(1)}} className="px-3 py-1 bg-red-500 rounded">
           Unread ({unread})
         </button>
 
       </div>
 
-      {/* 🔥 TABLE */}
+      {/* TABLE */}
       <div className="bg-[#112f2c] border border-teal-500/20 rounded-xl overflow-x-auto">
 
         <table className="w-full text-sm">
@@ -197,7 +194,7 @@ export default function Enquiries() {
 
       </div>
 
-      {/* 🔥 PAGINATION */}
+      {/* PAGINATION */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mt-4 text-sm text-gray-400">
 
         <p>
@@ -243,7 +240,7 @@ export default function Enquiries() {
 
       </div>
 
-      {/* 🔥 MESSAGE MODAL */}
+      {/* MESSAGE MODAL */}
       {showMessage && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center">
           <div className="bg-[#112f2c] p-6 rounded-xl w-[90%] max-w-lg">

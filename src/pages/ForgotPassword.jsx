@@ -1,12 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+
+import {
+  resendResetOtp,
+  verifyResetOtp,
+  resetPassword
+} from "../api/authApi";
 
 export default function ForgotPassword() {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [step, setStep] = useState(1);
-  const [otp, setOtp] = useState(["", "", "", ""]);
+
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+
   const [inputValue, setInputValue] = useState(
     location.state?.email || ""
   );
@@ -15,20 +25,42 @@ export default function ForgotPassword() {
   const [canResend, setCanResend] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
   const inputStyle =
     "w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-teal-600 transition text-sm shadow-sm";
 
-  // 🔥 SEND OTP
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  // ✅ FIXED SEND OTP
   const sendOtp = async () => {
     try {
+      if (!inputValue) {
+        toast.error("Email is required");
+        return false;
+      }
+
+      if (!emailRegex.test(inputValue)) {
+        toast.error("Enter valid email");
+        return false;
+      }
+
       setLoading(true);
-      await new Promise((res) => setTimeout(res, 1000));
+
+      await resendResetOtp({ email: inputValue });
+
+      toast.success("OTP sent");
+      return true;
+
+    } catch (err) {
+      toast.error(err.message || "Failed to send OTP");
+      return false;
     } finally {
       setLoading(false);
     }
   };
 
-  // ⏱ Timer
   useEffect(() => {
     let interval;
 
@@ -43,7 +75,6 @@ export default function ForgotPassword() {
     return () => clearInterval(interval);
   }, [step, timer]);
 
-  // 🔢 OTP input
   const handleChange = (value, index) => {
     if (!/^[0-9]?$/.test(value)) return;
 
@@ -51,8 +82,68 @@ export default function ForgotPassword() {
     newOtp[index] = value;
     setOtp(newOtp);
 
-    if (value && index < 3) {
+    if (value && index < 5) {
       document.getElementById(`otp-${index + 1}`)?.focus();
+    }
+  };
+
+  const handleVerify = async () => {
+    try {
+      const enteredOtp = otp.join("");
+
+      if (enteredOtp.length !== 6) {
+        toast.error("Enter valid OTP");
+        return;
+      }
+
+      setLoading(true);
+
+      await verifyResetOtp({
+        email: inputValue,
+        otp: enteredOtp,
+      });
+
+      toast.success("OTP verified");
+      setStep(3);
+
+    } catch (err) {
+      toast.error(err.message || "Invalid OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReset = async () => {
+    try {
+      if (!newPassword || !confirmPassword) {
+        toast.error("All fields required");
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        toast.error("Password must be at least 6 characters");
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        toast.error("Passwords do not match");
+        return;
+      }
+
+      setLoading(true);
+
+      await resetPassword({
+        email: inputValue,
+        password: newPassword,
+      });
+
+      toast.success("Password reset successful");
+      navigate("/login", { replace: true });
+
+    } catch (err) {
+      toast.error(err.message || "Reset failed");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -75,7 +166,6 @@ export default function ForgotPassword() {
         p-6 md:p-8 w-full max-w-xs md:max-w-sm border border-gray-200"
       >
 
-        {/* Logo */}
         <div className="flex items-center gap-3 mb-5">
           <div className="bg-gradient-to-br from-teal-700 to-teal-900 
           text-white w-10 h-10 flex items-center justify-center 
@@ -93,35 +183,31 @@ export default function ForgotPassword() {
           {step === 1 && (
             <motion.div key="step1" {...stepAnimation} className="space-y-4">
 
-              <h2 className="text-xl font-bold">
-                Forgot Password 
-              </h2>
-              <p className="text-gray-500 text-sm">
-                Enter your email or phone to get OTP
-              </p>
+              <h2 className="text-xl font-bold">Forgot Password</h2>
 
               <div>
                 <label className="text-xs text-gray-500">
-                  EMAIL / PHONE
+                  EMAIL
                 </label>
                 <input
                   type="text"
                   value={inputValue}
+                  placeholder="Enter your email"
                   onChange={(e) => setInputValue(e.target.value)}
-                  placeholder="doctor@hospital.com"
                   className={inputStyle}
                 />
               </div>
 
               <motion.button
-                whileTap={{ scale: 0.96 }}
-                whileHover={{ scale: 1.02 }}
                 disabled={loading}
                 onClick={async () => {
-                  await sendOtp();
-                  setStep(2);
-                  setTimer(30);
-                  setCanResend(false);
+                  const success = await sendOtp();
+
+                  if (success) {
+                    setStep(2);
+                    setTimer(30);
+                    setCanResend(false);
+                  }
                 }}
                 className="w-full bg-gradient-to-r from-teal-700 to-teal-900 
                 text-white py-2 rounded-lg shadow-lg disabled:opacity-50"
@@ -141,10 +227,9 @@ export default function ForgotPassword() {
               </h2>
 
               <p className="text-center text-sm text-gray-500">
-                Enter 4 digit code
+                Enter 6 digit code
               </p>
 
-              {/* OTP BOX */}
               <div className="flex justify-center gap-3">
                 {otp.map((digit, index) => (
                   <input
@@ -162,44 +247,31 @@ export default function ForgotPassword() {
                 ))}
               </div>
 
-              <div className="text-center text-sm h-6 flex items-center justify-center">
+              <div className="text-center text-sm mt-4">
+                {canResend ? (
+                  <button
+                    onClick={async () => {
+                      const success = await sendOtp();
+                      if (success) {
+                        setTimer(30);
+                        setCanResend(false);
+                        setOtp(["", "", "", "", "", ""]);
+                      }
+                    }}
+                    className="text-teal-700 font-semibold"
+                  >
+                    Resend OTP
+                  </button>
+                ) : (
+                  <span className="text-gray-500">
+                    Resend in{" "}
+                    <span className="text-teal-700 font-semibold">
+                      {timer}s
+                    </span>
+                  </span>
+                )}
+              </div>
 
-  <AnimatePresence mode="wait">
-    {canResend ? (
-      <motion.button
-        key="resend"
-        initial={{ opacity: 0, scale: 0.8, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.3 }}
-        whileTap={{ scale: 0.9 }}
-        whileHover={{ scale: 1.05 }}
-        onClick={async () => {
-          await sendOtp();
-          setTimer(30);
-          setCanResend(false);
-          setOtp(["", "", "", ""]);
-        }}
-        className="px-3 py-1 rounded-md bg-gradient-to-r 
-        from-teal-700 to-teal-900 text-white text-xs shadow-md"
-      >
-         Resend OTP
-      </motion.button>
-    ) : (
-      <motion.span
-        key="timer"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="text-gray-500"
-      >
-        Resend in <span className="text-teal-700 font-semibold">{timer}s</span>
-      </motion.span>
-    )}
-  </AnimatePresence>
-
-</div>
-              {/* BUTTONS */}
               <div className="flex gap-3">
                 <button
                   onClick={() => setStep(1)}
@@ -209,13 +281,12 @@ export default function ForgotPassword() {
                 </button>
 
                 <motion.button
-                  whileTap={{ scale: 0.96 }}
-                  whileHover={{ scale: 1.02 }}
-                  onClick={() => setStep(3)}
+                  disabled={loading}
+                  onClick={handleVerify}
                   className="w-1/2 bg-gradient-to-r from-teal-700 to-teal-900 
                   text-white py-2 rounded-lg shadow-lg"
                 >
-                  Verify
+                  {loading ? "Verifying..." : "Verify"}
                 </motion.button>
               </div>
 
@@ -236,6 +307,9 @@ export default function ForgotPassword() {
                 </label>
                 <input
                   type="password"
+                  value={newPassword}
+                  placeholder="Enter new password"
+                  onChange={(e) => setNewPassword(e.target.value)}
                   className={inputStyle}
                 />
               </div>
@@ -246,17 +320,20 @@ export default function ForgotPassword() {
                 </label>
                 <input
                   type="password"
+                  value={confirmPassword}
+                  placeholder="Confirm new password"
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   className={inputStyle}
                 />
               </div>
 
               <motion.button
-                whileTap={{ scale: 0.96 }}
-                whileHover={{ scale: 1.02 }}
+                disabled={loading}
+                onClick={handleReset}
                 className="w-full bg-gradient-to-r from-teal-700 to-teal-900 
                 text-white py-2 rounded-lg shadow-lg"
               >
-                Reset Password
+                {loading ? "Resetting..." : "Reset Password"}
               </motion.button>
 
             </motion.div>

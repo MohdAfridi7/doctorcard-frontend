@@ -1,13 +1,41 @@
 import { useNavigate } from "react-router-dom";
-import { Share2, Edit } from "lucide-react";
+import { Share2, Edit, Check } from "lucide-react";
+import { useState, useEffect } from "react";
+import { getDashboardStats } from "../../api/authApi";
 
 export default function DoctorHeader() {
+
   const navigate = useNavigate();
+  const [copied, setCopied] = useState(false);
+  const [profileUrl, setProfileUrl] = useState("");
+
+  useEffect(() => {
+    loadDashboard();
+  }, []);
+
+  const loadDashboard = async () => {
+    try {
+
+      const res = await getDashboardStats();
+
+      setProfileUrl(res.profileUrl);
+
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const handleShare = () => {
-    const profileUrl = `${window.location.origin}/see-profile`;
-    navigator.clipboard.writeText(profileUrl);
-    alert("Profile link copied!");
+
+    const fullUrl = `${window.location.origin}${profileUrl}`;
+
+    navigator.clipboard.writeText(fullUrl);
+
+    setCopied(true);
+
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
   };
 
   return (
@@ -33,13 +61,21 @@ export default function DoctorHeader() {
         {/* Share Profile */}
         <button
           onClick={handleShare}
-          className="flex items-center gap-2 bg-teal-500 text-black px-3 sm:px-4 py-2 rounded-lg hover:bg-teal-400 transition text-sm"
+          className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg transition text-sm
+          ${
+            copied
+              ? "bg-green-500 text-white"
+              : "bg-teal-500 text-black hover:bg-teal-400"
+          }`}
         >
-          <Share2 size={16} />
-          <span className="hidden sm:inline">Share Profile</span>
+          {copied ? <Check size={16} /> : <Share2 size={16} />}
+          <span className="hidden sm:inline">
+            {copied ? "Copied" : "Share Profile"}
+          </span>
         </button>
 
       </div>
+
     </div>
   );
 }

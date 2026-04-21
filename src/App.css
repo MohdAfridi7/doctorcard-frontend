@@ -8,3 +8,13 @@
 .card {
   @apply bg-indigo-50 p-4 rounded-lg shadow;
 }
+
+input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(59%) sepia(52%) saturate(472%) hue-rotate(126deg) brightness(92%) contrast(90%);
+  cursor: pointer;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(59%) sepia(52%) saturate(472%) hue-rotate(126deg) brightness(92%) contrast(90%);
+  cursor: pointer;
+}

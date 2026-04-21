@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+
+// ✅ API import
+import { verifyOtp, resendOtp } from "../api/authApi";
 
 export default function VerifyOtp() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // 👉 signup se aaya email
   const email = location.state?.email || "example@gmail.com";
 
-  const [otp, setOtp] = useState(["", "", "", ""]);
+  // ✅ 6 digit OTP
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [timer, setTimer] = useState(30);
   const [canResend, setCanResend] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // ⏱ Timer
   useEffect(() => {
@@ -36,15 +41,58 @@ export default function VerifyOtp() {
     newOtp[index] = value;
     setOtp(newOtp);
 
-    // auto focus next
-    if (value && index < 3) {
+    // ✅ next focus
+    if (value && index < 5) {
       document.getElementById(`otp-${index + 1}`)?.focus();
     }
   };
 
-  // ✅ SIMPLE VERIFY (NO BACKEND)
-  const handleVerify = () => {
-    navigate("/see-profile");
+  // ✅ VERIFY OTP
+  const handleVerify = async () => {
+    try {
+      const enteredOtp = otp.join("");
+
+      if (enteredOtp.length !== 6) {
+        toast.error("Enter valid OTP");
+        return;
+      }
+
+      setLoading(true);
+
+      const res = await verifyOtp({
+        email,
+        otp: enteredOtp,
+      });
+
+      toast.success(res.message || "OTP verified");
+
+      navigate("/login", { replace: true });
+
+    } catch (err) {
+      toast.error(err.message || "Invalid OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ RESEND OTP
+  const handleResend = async () => {
+    try {
+      setLoading(true);
+
+      const res = await resendOtp({ email });
+
+      toast.success(res.message || "OTP resent");
+
+      setTimer(30);
+      setCanResend(false);
+      setOtp(["", "", "", "", "", ""]);
+
+    } catch (err) {
+      toast.error(err.message || "Failed to resend OTP");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -83,7 +131,7 @@ export default function VerifyOtp() {
           {email}
         </p>
 
-        {/* OTP BOX */}
+        {/* OTP BOX (6 DIGIT) */}
         <div className="flex justify-center gap-3 mt-5">
           {otp.map((digit, index) => (
             <input
@@ -105,11 +153,7 @@ export default function VerifyOtp() {
         <div className="text-center text-sm mt-4">
           {canResend ? (
             <button
-              onClick={() => {
-                setTimer(30);
-                setCanResend(false);
-                setOtp(["", "", "", ""]);
-              }}
+              onClick={handleResend}
               className="text-teal-700 font-semibold"
             >
               Resend OTP
@@ -129,10 +173,11 @@ export default function VerifyOtp() {
           whileTap={{ scale: 0.96 }}
           whileHover={{ scale: 1.02 }}
           onClick={handleVerify}
+          disabled={loading}
           className="w-full mt-6 bg-gradient-to-r from-teal-700 to-teal-900 
           text-white py-2 rounded-lg shadow-lg"
         >
-          Verify OTP
+          {loading ? "Verifying..." : "Verify OTP"}
         </motion.button>
 
       </motion.div>

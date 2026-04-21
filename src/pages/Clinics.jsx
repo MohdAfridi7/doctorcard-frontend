@@ -1,7 +1,9 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 export default function Clinics() {
+  const navigate = useNavigate();
   return (
     <section className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200 px-4 sm:px-6 py-10 sm:py-14">
 
@@ -22,9 +24,10 @@ export default function Clinics() {
             appointments efficiently, and expand your healthcare reach.
           </p>
 
-          <button className="mt-6 bg-gradient-to-r from-teal-700 to-teal-900 
+          <button  onClick={() => navigate("/contact")} className="mt-6 bg-gradient-to-r from-teal-700 to-teal-900 
           text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-xl shadow-lg 
           hover:shadow-xl hover:scale-105 transition text-sm sm:text-base">
+            
             Join as a Clinic →
           </button>
         </motion.div>
@@ -128,7 +131,7 @@ export default function Clinics() {
             Join DoctorCard today and take your clinic to the next level with digital healthcare solutions.
           </p>
 
-          <button className="bg-white text-teal-800 px-6 sm:px-8 py-2.5 sm:py-3 
+          <button  onClick={() => navigate("/signup")} className="bg-white text-teal-800 px-6 sm:px-8 py-2.5 sm:py-3 
           rounded-xl font-semibold shadow hover:scale-105 transition text-sm sm:text-base">
             Get Started Now
           </button>

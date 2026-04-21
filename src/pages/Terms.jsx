@@ -123,7 +123,7 @@ export default function Terms() {
           </p>
         </motion.div>
 
-        {/* CTA */}
+        {/* CTA
         <div className="flex justify-center mt-8 sm:mt-10">
           <button className="bg-gradient-to-r from-teal-700 to-teal-900 
           text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg sm:rounded-xl 
@@ -131,7 +131,7 @@ export default function Terms() {
           text-xs sm:text-sm md:text-base font-medium">
             Accept & Continue →
           </button>
-        </div>
+        </div> */}
 
         {/* FOOTER */}
         <p className="text-center text-[10px] sm:text-xs text-gray-400 mt-6 sm:mt-8">

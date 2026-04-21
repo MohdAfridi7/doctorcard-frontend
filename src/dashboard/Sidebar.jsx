@@ -9,20 +9,37 @@ import {
   X
 } from "lucide-react";
 import { useState } from "react";
+import { useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../../src/context/AuthContext";
 
 export default function Sidebar({ role }) {
   const [open, setOpen] = useState(false);
+  const { setUser } = useContext(AuthContext);
+const navigate = useNavigate();
 
-  const doctorMenu = [
-    { name: "Dashboard", path: "/doctor", icon: <LayoutDashboard size={18} /> },
-    { name: "My Profile", path: "/doctor/profile", icon: <User size={18} /> },
-    { name: "Appointments", path: "/doctor/appointments", icon: <Calendar size={18} /> },
-  ];
+const handleLogout = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  setUser(null);
+  navigate("/login", { replace: true });
+};
+
+ const doctorMenu = [
+  { name: "Dashboard", path: "/doctor", icon: <LayoutDashboard size={18} /> },
+  { name: "My Profile", path: "/doctor/profile", icon: <User size={18} /> },
+  { name: "Appointments", path: "/doctor/appointments", icon: <Calendar size={18} /> },
+
+  // ✅ NEW
+  { name: "Enquiries", path: "/doctor/enquiries", icon: <Users size={18} /> },
+  
+];
 
   const adminMenu = [
     { name: "Dashboard", path: "/admin", icon: <LayoutDashboard size={18} /> },
     { name: "Enquiries", path: "/admin/enquiries", icon: <Users size={18} /> },
     { name: "Doctors", path: "/admin/doctors", icon: <Stethoscope size={18} /> },
+    { name: "Create Doctor", path: "/admin/create-doctor", icon: <Stethoscope size={18} /> },
   ];
 
   const menu = role === "admin" ? adminMenu : doctorMenu;
@@ -75,26 +92,27 @@ export default function Sidebar({ role }) {
           {menu.map((item, i) => (
             <li key={i}>
               <NavLink
-                to={item.path}
-                onClick={() => setOpen(false)}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2 rounded-lg transition ${
-                    isActive
-                      ? "bg-teal-600/20 border border-teal-500 text-teal-300"
-                      : "text-gray-300 hover:bg-teal-700/20"
-                  }`
-                }
-              >
-                {item.icon}
-                {item.name}
-              </NavLink>
+  to={item.path}
+  end={item.path === "/doctor" || item.path === "/admin"}
+  onClick={() => setOpen(false)}
+  className={({ isActive }) =>
+    `flex items-center gap-3 px-3 py-2 rounded-lg transition ${
+      isActive
+        ? "bg-teal-600/20 border border-teal-500 text-teal-300"
+        : "text-gray-300 hover:bg-teal-700/20"
+    }`
+  }
+>
+  {item.icon}
+  {item.name}
+</NavLink>
             </li>
           ))}
         </ul>
 
         {/* LOGOUT */}
         <div className="p-4 border-t border-teal-800">
-          <button className="w-full text-left p-2 text-red-400 hover:bg-red-500/20 rounded">
+          <button onClick={handleLogout} className="w-full text-left p-2 text-red-400 hover:bg-red-500/20 rounded">
             Logout
           </button>
         </div>

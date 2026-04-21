@@ -1,6 +1,11 @@
 import { Link } from "react-router-dom";
+import { useContext } from "react";
+import { AuthContext } from "../../context/AuthContext";
 
 export default function CTA() {
+
+  const { user } = useContext(AuthContext);
+
   return (
     <section className="bg-gradient-to-b from-gray-100 to-gray-200 py-24 px-4 flex items-center justify-center text-center">
       
@@ -24,10 +29,10 @@ export default function CTA() {
           Claim your profile before someone in your specialisation does.
         </p>
 
-        {/* CTA Button */}
-        <Link to="/signup">
+        {/* ✅ BUTTON */}
+        <Link to={user ? "/see-profile" : "/signup"}>
           <button className="bg-teal-700 hover:bg-teal-800 text-white px-8 py-4 rounded-xl text-sm md:text-base font-semibold shadow-md transition-all duration-300 hover:scale-105">
-            Claim Your Free Profile →
+            {user ? "My Live Profile →" : "Claim Your Free Profile →"}
           </button>
         </Link>
 
